@@ -347,6 +347,19 @@ list docs =
         rbracket
         (fmap duplicate docs)
 
+-- | Pretty-print a bounded list
+bounded :: Doc Ann -> [Doc Ann] -> Doc Ann
+bounded b [] = lbracket <> b <> pipe <> space <> pipe <> rbracket
+bounded b docs =
+  enclose
+    (lbracket <> b <> pipe <> space)
+    (lbracket <> b <> pipe <> space)
+    (comma <> space)
+    (comma <> space)
+    (space <> pipe <> rbracket)
+    (pipe <> rbracket)
+    (fmap duplicate docs)
+
 -- | Pretty-print union types and literals
 angles :: [(Doc Ann, Doc Ann)] -> Doc Ann
 angles   [] = langle <> rangle
@@ -1450,6 +1463,10 @@ prettyPrinters characterSet =
         prettyUnion a
     prettyPrimitiveExpression (ListLit Nothing b) =
         list (map prettyExpression (Data.Foldable.toList b))
+    prettyPrimitiveExpression (Bounded n) =
+      builtin "Bounded" <> space <> prettyNatural n
+    prettyPrimitiveExpression (BoundedLit n _ b) =
+      bounded (prettyNatural n) (map prettyExpression (Data.Foldable.toList b))
     prettyPrimitiveExpression a
         | Just doc <- preserveSource a =
             doc

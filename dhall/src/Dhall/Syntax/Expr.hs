@@ -259,6 +259,10 @@ data Expr s a
     | ImportAlt (Expr s a) (Expr s a)
     -- | > Embed import                             ~  import
     | Embed a
+    -- | > Bounded n                                ~  Bounded n
+    | Bounded Natural
+    -- | > BoundedLit n                             ~  Bounded n [ e1, e2, e3 ]
+    | BoundedLit Natural (Maybe (Expr s a)) (Seq (Expr s a))
     deriving (Generic)
 -- NB: If you add a constructor to Expr, please also update the Arbitrary
 -- instance in Dhall.Test.QuickCheck.

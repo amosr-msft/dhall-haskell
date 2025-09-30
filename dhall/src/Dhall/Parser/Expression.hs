@@ -443,8 +443,8 @@ parsers embedded = Parsers{..}
 
                     let alternative5B2 =
                             case shallowDenote a of
-                                ListLit Nothing [] ->
-                                    fail "Empty list literal without annotation"
+                                -- ListLit Nothing [] ->
+                                --     fail "Empty list literal without annotation"
                                 _ -> pure a
 
                     alternative5B0 <|> alternative5B1 <|> alternative5B2
@@ -636,6 +636,7 @@ parsers embedded = Parsers{..}
                     , listLiteral
                     , alternative37
                     , alternative09
+                    , boundedType
                     , builtin
                     ]
                 )
@@ -1111,6 +1112,22 @@ parsers embedded = Parsers{..}
 
             whitespace
 
+            let bounded = do
+                    n <- try (naturalLiteral <* _pipe)
+
+                    whitespace
+                    a <- try (optional (_comma *> whitespace) *> expression)
+                    whitespace
+
+                    as <- many (try (_comma *> whitespace *> expression) <* whitespace)
+
+                    _ <- optional (_comma *> whitespace)
+
+                    _pipe
+                    _closeBracket
+
+                    return (BoundedLit n Nothing (Data.Sequence.fromList (a : as)))
+
             let nonEmptyListLiteral = do
                     a <- try (optional (_comma *> whitespace) *> expression)
 
@@ -1129,7 +1146,13 @@ parsers embedded = Parsers{..}
 
                     return (ListLit Nothing mempty)
 
-            nonEmptyListLiteral <|> emptyListLiteral) <?> "literal"
+            bounded <|> nonEmptyListLiteral <|> emptyListLiteral) <?> "literal"
+
+    boundedType = (do
+            _ <- _Bounded
+            whitespace
+            n <- naturalLiteral
+            pure (Bounded n) ) <?> "bounded type literal"
 
 {-| Parse an environment variable import
 

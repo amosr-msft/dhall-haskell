@@ -72,6 +72,7 @@ module Dhall.Parser.Token (
     _ListIndexed,
     _ListReverse,
     _Bool,
+    _Bounded,
     _Bytes,
     _Natural,
     _Integer,
@@ -126,6 +127,7 @@ module Dhall.Parser.Token (
     _arrow,
     _doubleColon,
     _with,
+    _pipe,
     ) where
 
 import Dhall.Parser.Combinators
@@ -1244,6 +1246,9 @@ _TimeZoneShow = builtin "TimeZone/show"
 _List :: Parser ()
 _List = builtin "List"
 
+_Bounded :: Parser ()
+_Bounded = builtin "Bounded"
+
 {-| Parse the @True@ built-in
 
     This corresponds to the @True@ rule from the official grammar
@@ -1436,3 +1441,7 @@ _arrow =
 -- | Parse a double colon (@::@)
 _doubleColon :: Parser ()
 _doubleColon = operator "::"
+
+-- | Parse a pipe (@|@)
+_pipe :: Parser ()
+_pipe = operator "|"

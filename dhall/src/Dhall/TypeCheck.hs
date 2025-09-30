@@ -666,6 +666,64 @@ infer typer = loop
                 -- See https://github.com/dhall-lang/dhall-haskell/issues/1359.
                 else die ListLitInvariant
 
+        Bounded _ ->
+            return (VConst Type ~> VConst Type)
+
+        BoundedLit n Nothing ts₀ ->
+            case Data.Sequence.viewl ts₀ of
+                t₀ :< ts₁ -> do
+                    _T₀' <- loop ctx t₀
+
+                    let _T₀'' = quote names _T₀'
+
+                    tT₀' <- loop ctx _T₀''
+
+                    case tT₀' of
+                        VConst Type -> return ()
+                        _           -> die (InvalidListType (App (Bounded n) _T₀''))
+
+                    let process i t₁ = do
+                            _T₁' <- loop ctx t₁
+
+                            if Eval.conv values _T₀' _T₁'
+                                then
+                                    return ()
+
+                                else do
+                                    let _T₀'' = quote names _T₀'
+                                    let _T₁'' = quote names _T₁'
+
+                                    -- Carefully note that we don't use `die`
+                                    -- here so that the source span is narrowed
+                                    -- to just the offending element
+                                    let err = MismatchedListElements (i+1) _T₀'' t₁ _T₁''
+
+                                    Left (TypeError context t₁ err)
+
+                    Foldable.WithIndex.itraverse_ process ts₁
+
+                    return (VBounded n _T₀')
+
+                _ ->
+                    die MissingListType
+
+        BoundedLit _ (Just _T₀) ts ->
+            if Data.Sequence.null ts
+                then do
+                    _ <- loop ctx _T₀
+
+                    let _T₀' = eval values _T₀
+
+                    let _T₀'' = quote names _T₀'
+
+                    case _T₀' of
+                        VBounded _ _ -> return _T₀'
+                        _       -> die (InvalidListType _T₀'')
+
+                -- See https://github.com/dhall-lang/dhall-haskell/issues/1359.
+                else die ListLitInvariant
+
+
         ListAppend x y -> do
             tx' <- loop ctx x
 

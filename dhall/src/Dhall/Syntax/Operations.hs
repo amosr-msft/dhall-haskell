@@ -122,6 +122,8 @@ unsafeSubExpressions _ (TimeZoneLiteral a) = pure (TimeZoneLiteral a)
 unsafeSubExpressions _ TimeZoneShow = pure TimeZoneShow
 unsafeSubExpressions _ List = pure List
 unsafeSubExpressions f (ListLit a b) = ListLit <$> traverse f a <*> traverse f b
+unsafeSubExpressions _ (Bounded n) = pure (Bounded n)
+unsafeSubExpressions f (BoundedLit n a b) = BoundedLit n <$> traverse f a <*> traverse f b
 unsafeSubExpressions f (ListAppend a b) = ListAppend <$> f a <*> f b
 unsafeSubExpressions _ ListBuild = pure ListBuild
 unsafeSubExpressions _ ListFold = pure ListFold
@@ -276,6 +278,7 @@ reservedIdentifiers = reservedKeywords <>
         , "Time"
         , "TimeZone"
         , "List"
+        , "Bounded"
         , "Type"
         , "Kind"
         , "Sort"

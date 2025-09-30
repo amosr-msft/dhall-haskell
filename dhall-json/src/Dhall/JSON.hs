@@ -425,6 +425,9 @@ dhallToJSON e0 = loop (Core.alphaNormalize (Core.normalize e0))
         Core.ListLit _ a -> do
             a' <- traverse loop a
             return (toJSON a')
+        Core.BoundedLit n _ a -> do
+            a' <- traverse loop a
+            return $ Aeson.Object [("max_length", toJSON n), ("elements", toJSON a')]
         Core.Some a -> do
             a' <- loop a
             return (toJSON a')
@@ -608,6 +611,9 @@ dhallToJSON e0 = loop (Core.alphaNormalize (Core.normalize e0))
         Core.App Core.List t -> do
             t' <- loop t
             return $ Aeson.Object [("type", Aeson.String "List"), ("element", t')]
+        Core.App (Core.Bounded n) t -> do
+            t' <- loop t
+            return $ Aeson.Object [("type", Aeson.String "Bounded"), ("element", t'), ("max_length", toJSON n)]
         Core.App Core.Optional t -> do
             t' <- loop t
             return $ Aeson.Object [("type", Aeson.String "Optional"), ("element", t')]
@@ -965,6 +971,10 @@ convertToHomogeneousMaps (Conversion {..}) e0 = loop (Core.normalize e0)
         Core.List ->
             Core.List
 
+        Core.Bounded n ->
+            Core.Bounded n
+
+
         Core.ListLit a b ->
             case transform of
                 Just c  -> loop c
@@ -1014,6 +1024,9 @@ convertToHomogeneousMaps (Conversion {..}) e0 = loop (Core.normalize e0)
 
             a' = fmap loop a
             b' = fmap loop b
+
+        Core.BoundedLit n a b ->
+            Core.BoundedLit n (fmap loop a) (fmap loop b)
 
         Core.ListAppend a b ->
             Core.ListAppend a' b'
