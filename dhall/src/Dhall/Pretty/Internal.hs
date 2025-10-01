@@ -1466,7 +1466,7 @@ prettyPrinters characterSet =
     prettyPrimitiveExpression Bounded =
       builtin "Bounded"
     prettyPrimitiveExpression (BoundedLit n _ b) =
-      bounded (prettyNatural n) (map prettyExpression (Data.Foldable.toList b))
+      bounded (prettyPrimitiveExpression n) (map prettyExpression (Data.Foldable.toList b))
     prettyPrimitiveExpression a
         | Just doc <- preserveSource a =
             doc

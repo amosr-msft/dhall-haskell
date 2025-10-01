@@ -672,6 +672,22 @@ infer typer = loop
         BoundedLit n Nothing ts₀ ->
             case Data.Sequence.viewl ts₀ of
                 t₀ :< ts₁ -> do
+                    _n' <- loop ctx n
+
+                    case _n' of
+                        VNatural -> return ()
+                        _        -> die (TypeMismatch n Natural n (quote names _n')) -- TODO more specific error
+
+                    case eval values n of
+                        VNaturalLit nn
+                            | fromIntegral (Data.Sequence.length ts₀) <= (fromIntegral nn :: Integer) ->
+                                return ()
+                            | otherwise ->
+                                die ListLitInvariant -- TODO specific error
+
+                        _             ->
+                            die (TypeMismatch n Natural (quote names (eval values n)) Natural) -- TODO more specific error
+
                     _T₀' <- loop ctx t₀
 
                     let _T₀'' = quote names _T₀'
@@ -680,7 +696,7 @@ infer typer = loop
 
                     case tT₀' of
                         VConst Type -> return ()
-                        _           -> die (InvalidListType (App (App Bounded (NaturalLit n)) _T₀''))
+                        _           -> die (InvalidListType (App (App Bounded n) _T₀''))
 
                     let process i t₁ = do
                             _T₁' <- loop ctx t₁
@@ -702,7 +718,7 @@ infer typer = loop
 
                     Foldable.WithIndex.itraverse_ process ts₁
 
-                    return (VBounded (VNaturalLit n) _T₀')
+                    return (VBounded (eval values n) _T₀')
 
                 _ ->
                     die MissingListType

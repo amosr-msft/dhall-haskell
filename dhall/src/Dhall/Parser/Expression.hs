@@ -1113,7 +1113,7 @@ parsers embedded = Parsers{..}
             whitespace
 
             let bounded = do
-                    n <- try (_Bounded *> whitespace *> naturalLiteral <* _pipe)
+                    n <- try (_Bounded *> whitespace *> primitiveExpression <* _pipe)
 
                     whitespace
                     a <- try (optional (_comma *> whitespace) *> expression)

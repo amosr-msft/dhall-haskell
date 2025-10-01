@@ -230,7 +230,7 @@ data Val a
     | VListReverse (Val a) !(Val a)
 
     | VBounded !(Val a) !(Val a)
-    | VBoundedLit !Natural !(Maybe (Val a)) !(Seq (Val a))
+    | VBoundedLit !(Val a) !(Maybe (Val a)) !(Seq (Val a))
 
     | VOptional (Val a)
     | VSome (Val a)
@@ -707,7 +707,7 @@ eval !env t0 =
         Bounded ->
             VHLam Prim $ \n -> VPrim (VBounded n)
         BoundedLit n ma ts ->
-            VBoundedLit n (fmap (eval env) ma) (fmap (eval env) ts)
+            VBoundedLit (eval env n) (fmap (eval env) ma) (fmap (eval env) ts)
         ListAppend t u ->
             vListAppend (eval env t) (eval env u)
         ListBuild ->
@@ -1081,7 +1081,7 @@ conv !env t0 t0' =
         (VBounded n a, VBounded n' a') ->
             conv env n n' && conv env a a'
         (VBoundedLit n _ xs, VBoundedLit n' _ xs') ->
-            n == n' && eqListBy (conv env) (toList xs) (toList xs')
+            conv env n n' && eqListBy (conv env) (toList xs) (toList xs')
         (VListAppend t u, VListAppend t' u') ->
             conv env t t' && conv env u u'
         (VListBuild _ t, VListBuild _ t') ->
@@ -1307,7 +1307,7 @@ quote !env !t0 =
         VBounded n t ->
             Bounded `qApp` n `qApp` t
         VBoundedLit n ma ts ->
-            BoundedLit n (fmap (quote env) ma) (fmap (quote env) ts)
+            BoundedLit (quote env n) (fmap (quote env) ma) (fmap (quote env) ts)
         VListAppend t u ->
             ListAppend (quote env t) (quote env u)
         VListBuild a t ->
@@ -1520,7 +1520,7 @@ alphaNormalize = goEnv EmptyNames
             Bounded ->
                 Bounded
             BoundedLit n ma ts ->
-                BoundedLit n (fmap go ma) (fmap go ts)
+                BoundedLit (go n) (fmap go ma) (fmap go ts)
             ListAppend t u ->
                 ListAppend (go t) (go u)
             ListBuild ->

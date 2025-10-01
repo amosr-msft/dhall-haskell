@@ -518,7 +518,7 @@ normalizeWithM ctx e0 = loop (Syntax.denote e0)
               t'  = traverse loop t
               es' = traverse loop es
           Bounded -> pure Bounded
-          BoundedLit n t es -> BoundedLit n <$> traverse loop t <*> traverse loop es
+          BoundedLit n t es -> BoundedLit <$> loop n <*> traverse loop t <*> traverse loop es
           ListAppend x y -> decide <$> loop x <*> loop y
             where
               decide (ListLit _ m)  r            | Data.Sequence.null m = r

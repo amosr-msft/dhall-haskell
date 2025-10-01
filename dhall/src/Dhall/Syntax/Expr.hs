@@ -262,7 +262,7 @@ data Expr s a
     -- | > Bounded                                  ~  Bounded
     | Bounded
     -- | > BoundedLit n                             ~  [Bounded n| e1, e2, e3 |]
-    | BoundedLit Natural (Maybe (Expr s a)) (Seq (Expr s a))
+    | BoundedLit (Expr s a) (Maybe (Expr s a)) (Seq (Expr s a))
     deriving (Generic)
 -- NB: If you add a constructor to Expr, please also update the Arbitrary
 -- instance in Dhall.Test.QuickCheck.

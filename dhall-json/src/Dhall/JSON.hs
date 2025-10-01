@@ -427,7 +427,8 @@ dhallToJSON e0 = loop (Core.alphaNormalize (Core.normalize e0))
             return (toJSON a')
         Core.BoundedLit n _ a -> do
             a' <- traverse loop a
-            return $ Aeson.Object [("max_length", toJSON n), ("elements", toJSON a')]
+            n' <- loop n
+            return $ Aeson.Object [("max_length", n'), ("elements", toJSON a')]
         Core.Some a -> do
             a' <- loop a
             return (toJSON a')
