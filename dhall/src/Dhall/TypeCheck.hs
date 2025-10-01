@@ -666,8 +666,8 @@ infer typer = loop
                 -- See https://github.com/dhall-lang/dhall-haskell/issues/1359.
                 else die ListLitInvariant
 
-        Bounded _ ->
-            return (VConst Type ~> VConst Type)
+        Bounded ->
+            return (VNatural ~> VConst Type ~> VConst Type)
 
         BoundedLit n Nothing ts₀ ->
             case Data.Sequence.viewl ts₀ of
@@ -680,7 +680,7 @@ infer typer = loop
 
                     case tT₀' of
                         VConst Type -> return ()
-                        _           -> die (InvalidListType (App (Bounded n) _T₀''))
+                        _           -> die (InvalidListType (App (App Bounded (NaturalLit n)) _T₀''))
 
                     let process i t₁ = do
                             _T₁' <- loop ctx t₁
@@ -702,7 +702,7 @@ infer typer = loop
 
                     Foldable.WithIndex.itraverse_ process ts₁
 
-                    return (VBounded n _T₀')
+                    return (VBounded (VNaturalLit n) _T₀')
 
                 _ ->
                     die MissingListType

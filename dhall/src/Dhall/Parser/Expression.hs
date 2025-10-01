@@ -636,7 +636,6 @@ parsers embedded = Parsers{..}
                     , listLiteral
                     , alternative37
                     , alternative09
-                    , boundedType
                     , builtin
                     ]
                 )
@@ -745,6 +744,7 @@ parsers embedded = Parsers{..}
                         choice
                             [ Bool             <$ _Bool
                             , Bytes            <$ _Bytes
+                            , Bounded          <$ _Bounded
                             ]
                     'S' ->    Const Sort       <$ _Sort
                     'T' ->
@@ -1113,7 +1113,7 @@ parsers embedded = Parsers{..}
             whitespace
 
             let bounded = do
-                    n <- try (naturalLiteral <* _pipe)
+                    n <- try (_Bounded *> whitespace *> naturalLiteral <* _pipe)
 
                     whitespace
                     a <- try (optional (_comma *> whitespace) *> expression)
@@ -1147,12 +1147,6 @@ parsers embedded = Parsers{..}
                     return (ListLit Nothing mempty)
 
             bounded <|> nonEmptyListLiteral <|> emptyListLiteral) <?> "literal"
-
-    boundedType = (do
-            _ <- _Bounded
-            whitespace
-            n <- naturalLiteral
-            pure (Bounded n) ) <?> "bounded type literal"
 
 {-| Parse an environment variable import
 

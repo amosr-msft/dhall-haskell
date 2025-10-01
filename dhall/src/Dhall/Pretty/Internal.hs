@@ -1463,8 +1463,8 @@ prettyPrinters characterSet =
         prettyUnion a
     prettyPrimitiveExpression (ListLit Nothing b) =
         list (map prettyExpression (Data.Foldable.toList b))
-    prettyPrimitiveExpression (Bounded n) =
-      builtin "Bounded" <> space <> prettyNatural n
+    prettyPrimitiveExpression Bounded =
+      builtin "Bounded"
     prettyPrimitiveExpression (BoundedLit n _ b) =
       bounded (prettyNatural n) (map prettyExpression (Data.Foldable.toList b))
     prettyPrimitiveExpression a
