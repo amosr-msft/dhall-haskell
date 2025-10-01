@@ -672,21 +672,24 @@ infer typer = loop
         BoundedLit n Nothing ts₀ ->
             case Data.Sequence.viewl ts₀ of
                 t₀ :< ts₁ -> do
-                    _n' <- loop ctx n
+                    tn <- loop ctx n
 
-                    case _n' of
+                    let n' = eval values n
+
+                    let len :: Integer = fromIntegral (Data.Sequence.length ts₀)
+                    let errLen = BoundedLitLength (quote names n') (quote names tn) len
+
+                    case tn of
                         VNatural -> return ()
-                        _        -> die (TypeMismatch n Natural n (quote names _n')) -- TODO more specific error
+                        _        -> die errLen
 
-                    case eval values n of
+                    case n' of
                         VNaturalLit nn
-                            | fromIntegral (Data.Sequence.length ts₀) <= (fromIntegral nn :: Integer) ->
+                            | len <= fromIntegral nn ->
                                 return ()
                             | otherwise ->
-                                die ListLitInvariant -- TODO specific error
-
-                        _             ->
-                            die (TypeMismatch n Natural (quote names (eval values n)) Natural) -- TODO more specific error
+                                die errLen
+                        _ -> die errLen
 
                     _T₀' <- loop ctx t₀
 
@@ -723,7 +726,7 @@ infer typer = loop
                 _ ->
                     die MissingListType
 
-        BoundedLit _ (Just _T₀) ts ->
+        BoundedLit n (Just _T₀) ts ->
             if Data.Sequence.null ts
                 then do
                     _ <- loop ctx _T₀
@@ -732,8 +735,12 @@ infer typer = loop
 
                     let _T₀'' = quote names _T₀'
 
+                    let n' = eval values n
+
                     case _T₀' of
-                        VBounded _ _ -> return _T₀'
+                        VBounded nt _
+                         | Eval.conv values n' nt -> return _T₀'
+                         | otherwise -> die (AnnotMismatch expression (quote names n') (quote names nt))
                         _       -> die (InvalidListType _T₀'')
 
                 -- See https://github.com/dhall-lang/dhall-haskell/issues/1359.
@@ -1508,6 +1515,7 @@ data TypeMessage s a
     | NotALabelPath
     | NotAQuestionPath Text
     | ShowConstructorNotOnUnion
+    | BoundedLitLength (Expr s a) (Expr s a) Integer
     deriving (Show)
 
 formatHints :: [Doc Ann] -> Doc Ann
@@ -4571,6 +4579,15 @@ prettyTypeMessage ShowConstructorNotOnUnion = ErrorMessages {..}
       hints = []
       long = ""
 
+prettyTypeMessage (BoundedLitLength nat ty actualLen) = ErrorMessages {..}
+  where
+      short = "Bounded literal requires a constant upper bound on the length; the number of elements cannot exceed the upper bound"
+      hints = [
+        "specified length " <> pretty nat <> " of type " <> pretty ty,
+        "elements in list literal: " <> pretty actualLen]
+      long = ""
+
+
 buildBooleanOperator :: Pretty a => Text -> Expr s a -> Expr s a -> ErrorMessages
 buildBooleanOperator operator expr0 expr1 = ErrorMessages {..}
   where
@@ -4852,6 +4869,8 @@ messageExpressions f m = case m of
         pure (NotAQuestionPath k)
     ShowConstructorNotOnUnion ->
         pure ShowConstructorNotOnUnion
+    BoundedLitLength n t len ->
+        BoundedLitLength <$> f n <*> f t <*> pure len
 
 {-| Newtype used to wrap error messages so that they render with a more
     detailed explanation of what went wrong
